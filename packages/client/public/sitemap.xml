@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
+  <url>
+    <loc>https://golix.cosmosfutsal.com/</loc>
+  </url>
+  <url>
+    <loc>https://golix.cosmosfutsal.com/docs/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://golix.cosmosfutsal.com/docs/"/>
+    <xhtml:link rel="alternate" hreflang="tr" href="https://golix.cosmosfutsal.com/docs/tr/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://golix.cosmosfutsal.com/docs/"/>
+  </url>
+  <url>
+    <loc>https://golix.cosmosfutsal.com/docs/tr/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://golix.cosmosfutsal.com/docs/"/>
+    <xhtml:link rel="alternate" hreflang="tr" href="https://golix.cosmosfutsal.com/docs/tr/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://golix.cosmosfutsal.com/docs/"/>
+  </url>
+  <url>
+    <loc>https://golix.cosmosfutsal.com/headless/</loc>
+  </url>
+</urlset>
