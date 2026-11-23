@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Golix geliştirici rehberi</title>
+<meta name="description" content="Node ile Golix odası aç, bot olarak odaya katıl, oyunu özelleştir, stadyum yaz ve odanı saldırılara karşı koru.">
+<link rel="icon" href="/favicon.png">
+<link rel="stylesheet" href="/docs/docs.css">
+<link rel="alternate" hreflang="en" href="/docs/">
+<link rel="alternate" hreflang="tr" href="/docs/tr/">
+</head>
+<body>
+<div class="layout">
+<nav>
+  <a class="brand" href="/"><img src="/icon.png" alt="">Golix</a>
+  <div class="langs"><a href="/docs/" lang="en">English</a><a href="/docs/tr/" aria-current="page" lang="tr">Türkçe</a></div>
+  <ol>
+    <li><a href="#start">Başlarken</a></li>
+    <li><a href="#config">Oda ayarları</a></li>
+    <li><a href="#methods">Oda metotları</a></li>
+    <li><a href="#events">Oda olayları</a></li>
+    <li><a href="#players">Oyuncu nesnesi</a></li>
+    <li><a href="#customizing">Oyunu özelleştirme</a></li>
+    <li><a href="#flags">Bayraklar</a></li>
+    <li><a href="#bots">Oyuncu olarak katılmak</a></li>
+    <li><a href="#replays">Tekrarlar</a></li>
+    <li><a href="#stadiums">Stadyum dosyaları</a></li>
+    <li><a href="#protection">Oda koruması</a></li>
+  </ol>
+</nav>
+<main>
+<h1>Golix geliştirici rehberi</h1>
+<p class="lead"><code>golix.js</code> ile Node'dan Golix odası aç, odada olanları script'le, odalara bot olarak katıl ve kendi stadyumlarını yaz.</p>
+
+<h2 id="start">Başlarken</h2>
+<p><code>golix.js</code> Node 22 veya üstünü ister.</p>
+<pre><code>npm install golix.js</code></pre>
+<p>Oda herkese açık lobiye kaydolur. Oyuncular senin sürecine doğrudan WebRTC ile bağlanır; doğrudan bağlantı kurulamazsa lobi üzerinden.</p>
+<pre><code>const golix = require('golix.js');
+
+golix().then((HBInit) =&gt; {
+  const room = HBInit({
+    roomName: 'Odam',
+    maxPlayers: 12,
+    noPlayer: true,
+    lobby: 'wss://golix.cosmosfutsal.com',
+    // A-Z, a-z, 0-9, - ve _ ile 22 karakter: yeniden başlatmalarda oda linki aynı kalır.
+    roomSecret: process.env.ROOM_SECRET,
+    // Sadece bu roomSecret ile oda ilk kez açılırken: https://golix.cosmosfutsal.com/headlesstoken adresinden
+    token: process.env.ROOM_TOKEN,
+  });
+  room.onRoomLink = (link) =&gt; console.log(link);
+  room.onPlayerJoin = (player) =&gt; room.sendAnnouncement(`Hoş geldin ${player.name}`, player.id);
+});</code></pre>
+<p>ES modülleriyle: <code>import golix from 'golix.js'; const HBInit = await golix();</code></p>
+<p>Callback'ler odanın tick'i içinde, saniyede 60 kez çalışır. İçlerinden çağrılan metotlar bir sonraki tick'te etkili olur. Bir callback hata fırlatırsa hata loglanır, oda durmaz.</p>
+
+<h2 id="config">Oda ayarları</h2>
+<table>
+  <tr><th>Alan</th><th>Anlamı</th></tr>
+  <tr><td><code>roomName</code></td><td>En fazla 40 karakter.</td></tr>
+  <tr><td><code>playerName</code></td><td>Host oyuncusunun adı; <code>noPlayer: true</code> ile host oyuncusu olmaz.</td></tr>
+  <tr><td><code>password</code></td><td>En fazla 30 karakter.</td></tr>
+  <tr><td><code>maxPlayers</code></td><td>2 ile 30 arası, varsayılan 12.</td></tr>
+  <tr><td><code>public</code></td><td>Oda listede görünsün mü. Varsayılan true.</td></tr>
+  <tr><td><code>geo</code></td><td>Oda listesinde gösterilen <code>{ code, lat, lon }</code>.</td></tr>
+  <tr><td><code>noPlayer</code></td><td>Odayı host oyuncusu olmadan çalıştırır.</td></tr>
+  <tr><td><code>lobby</code></td><td>Kaydolunacak <code>ws://</code> ya da <code>wss://</code> lobi adresi.</td></tr>
+  <tr><td><code>roomSecret</code></td><td><code>lobby</code> ile: oda kimliğinin türetildiği gizli anahtar; link yeniden başlatmalarda aynı kalır.</td></tr>
+  <tr><td><code>token</code></td><td><code>lobby</code> ile: bir <code>roomSecret</code> ilk kez oda açarken gereken, <a href="/headlesstoken/">/headlesstoken</a> sayfasından alınan oda token'ı. Bir kez ve on dakika geçerlidir; aynı <code>roomSecret</code> odayı sonra token'sız yeniden açar.</td></tr>
+  <tr><td><code>server</code></td><td><code>lobby</code> olmadan: odayı kendi lobinden sun; çalışan bir sunucu ya da onun ayarları (varsayılan port 8787).</td></tr>
+  <tr><td><code>clientUrl</code></td><td>Oda linkinde kullanılan adres.</td></tr>
+  <tr><td><code>webrtc</code></td><td>Oyuncuların sürecine açtığı WebRTC bağlantıları için <code>{ bindAddress, portRange: [ilk, son], iceServers }</code>.</td></tr>
+</table>
+
+<h2 id="methods">Oda metotları</h2>
+<h3>Oyuncular ve sohbet</h3>
+<table>
+  <tr><th>Metot</th><th>Not</th></tr>
+  <tr><td><code>sendChat(message, targetId?)</code></td><td>Host oyuncusu olarak; en fazla 140 karakter.</td></tr>
+  <tr><td><code>sendAnnouncement(msg, targetId?, color?, style?, sound?)</code></td><td>Stil <code>normal</code>, <code>bold</code>, <code>italic</code>, <code>small</code>, <code>small-bold</code> ya da <code>small-italic</code>; ses 0, 1 ya da 2; en fazla 1000 karakter.</td></tr>
+  <tr><td><code>setPlayerAdmin(id, admin)</code></td><td></td></tr>
+  <tr><td><code>setPlayerTeam(id, team)</code></td><td>0 izleyici, 1 kırmızı, 2 mavi.</td></tr>
+  <tr><td><code>kickPlayer(id, reason, ban)</code></td><td>Ban, oyuncunun auth'unu ve conn'unu kapsar.</td></tr>
+  <tr><td><code>clearBan(id)</code>, <code>clearBans()</code></td><td></td></tr>
+  <tr><td><code>getPlayer(id)</code>, <code>getPlayerList()</code></td><td></td></tr>
+  <tr><td><code>reorderPlayers(ids, moveToTop)</code></td><td></td></tr>
+  <tr><td><code>setPlayerAvatar(id, avatar)</code></td><td>Null, oyuncunun kendi seçtiği avatarı geri verir.</td></tr>
+</table>
+<h3>Oyun</h3>
+<table>
+  <tr><th>Metot</th><th>Not</th></tr>
+  <tr><td><code>startGame()</code>, <code>stopGame()</code>, <code>pauseGame(paused)</code></td><td></td></tr>
+  <tr><td><code>setScoreLimit(n)</code>, <code>setTimeLimit(minutes)</code></td><td>0 ile 99 arası; sadece maçlar arasında.</td></tr>
+  <tr><td><code>setTeamsLock(locked)</code></td><td></td></tr>
+  <tr><td><code>setTeamColors(team, angle, textColor, colors)</code></td><td>En fazla beş şerit.</td></tr>
+  <tr><td><code>setKickRateLimit(min, rate, burst)</code></td><td></td></tr>
+  <tr><td><code>getScores()</code>, <code>getBallPosition()</code></td><td><code>scores.timeLimit</code> saniye cinsindendir.</td></tr>
+  <tr><td><code>setCustomStadium(text)</code></td><td>Bir <a href="#stadiums">stadyum dosyası</a> alır; geçerli değilse hata fırlatır.</td></tr>
+  <tr><td><code>setDefaultStadium(name)</code></td><td>Hazır stadyumlar: <code>Standard</code>, <code>Wide Goals</code>, <code>Compact</code>, <code>Stadium</code>, <code>Oval</code>, <code>Rink</code>, <code>Big Rink</code>, <code>Stadium Wide Goals</code>, <code>Big Oval</code>, <code>Colossal</code>. <code>Classic</code>, <code>Easy</code>, <code>Small</code>, <code>Big</code>, <code>Rounded</code>, <code>Hockey</code>, <code>Big Hockey</code>, <code>Big Easy</code>, <code>Big Rounded</code> ve <code>Huge</code> sırasıyla aynılarını gösterir.</td></tr>
+  <tr><td><code>startRecording()</code>, <code>stopRecording()</code></td><td>Bir <code>.glx</code> tekrarını <code>Uint8Array</code> olarak döndürür.</td></tr>
+  <tr><td><code>setPassword(pass)</code></td><td>Null ya da boş metin şifreyi kaldırır.</td></tr>
+  <tr><td><code>setRoomName(name)</code>, <code>setMaxPlayers(n)</code></td><td>Oda çalışırken adını ve oyuncu sınırını değiştirir, oda listesinde de. <code>n</code> 2 ile 30 arası; sınır odadaki oyuncu sayısının altına inerse içerideki oyuncular kalır.</td></tr>
+  <tr><td><code>setTeamName(team, name)</code></td><td>Kırmızı ya da mavi için gösterilen ad, en fazla 20 karakter; boş ad Red ya da Blue'ya döner.</td></tr>
+  <tr><td><code>setGameProperties({ red, blue, time, scoreLimit, timeLimit })</code></td><td>Devam eden maçı değiştirir: skorlar, saniye cinsinden saat ve sınırlar (<code>timeLimit</code> dakika). Vermediğin alanlar aynı kalır. Bir dakika eklemek için: <code>setGameProperties({ timeLimit: room.getScores().timeLimit / 60 + 1 })</code>.</td></tr>
+</table>
+<h3>Diskler</h3>
+<table>
+  <tr><th>Metot</th><th>Not</th></tr>
+  <tr><td><code>getDiscCount()</code></td><td>Önce stadyum diskleri (top 0'da), sonra oyuncu diskleri.</td></tr>
+  <tr><td><code>getDiscProperties(index)</code>, <code>setDiscProperties(index, props)</code></td><td>Alanlar <code>x y xspeed yspeed xgravity ygravity radius bCoeff invMass damping color cMask cGroup</code>; ondalıklar 32 bit olarak saklanır.</td></tr>
+  <tr><td><code>getPlayerDiscProperties(id)</code>, <code>setPlayerDiscProperties(id, props)</code></td><td>Oyunculara her kickoff'ta yeni disk verilir, değişiklik o zamana kadar sürer. Kalıcı değişiklik için <a href="#customizing"><code>setPlayerPhysics</code></a>'i kullan.</td></tr>
+  <tr><td><code>addJoint(joint)</code>, <code>removeJoint(index)</code>, <code>getJointCount()</code></td><td>Devam eden maçta diskleri, oyuncular dahil, birbirine bağlar. Bkz. <a href="#joints">joint'ler</a>.</td></tr>
+</table>
+<div class="note">Oyunculara gönderilemeyecek bir değerle yapılan çağrı (32 biti aşan bir renk, ondalıklı bir bayrak ya da 3 numaralı takım gibi) odayı bozmak yerine konsola bir uyarı yazılarak düşürülür.</div>
+<h3>Koruma</h3>
+<table>
+  <tr><th>Metot</th><th>Not</th></tr>
+  <tr><td><code>setRequireRecaptcha(on)</code></td><td>Katılan herkesten captcha ister. Bkz. <a href="#protection">oda koruması</a>.</td></tr>
+  <tr><td><code>setRaidProtection({ joins, seconds, minutes })</code></td><td>Otomatik istila korumasını ayarlar; null kapatır.</td></tr>
+  <tr><td><code>setMaxPlayersPerConn(n)</code></td><td>Tek bir ağ adresinden odada en fazla kaç oyuncu olabileceği; null sınırsız (varsayılan).</td></tr>
+</table>
+
+<h2 id="events">Oda olayları</h2>
+<p>Özelliğe bir fonksiyon ata.</p>
+<table>
+  <tr><th>Olay</th><th>Not</th></tr>
+  <tr><td><code>onPlayerJoin(player)</code>, <code>onPlayerLeave(player)</code></td><td></td></tr>
+  <tr><td><code>onPlayerChat(player, message)</code></td><td><code>false</code> döndürürsen mesaj diğerlerine gitmez.</td></tr>
+  <tr><td><code>onPlayerKicked(player, reason, ban, byPlayer)</code></td><td></td></tr>
+  <tr><td><code>onPlayerAdminChange(player, byPlayer)</code>, <code>onPlayerTeamChange(player, byPlayer)</code></td><td></td></tr>
+  <tr><td><code>onPlayerActivity(player)</code></td><td>Oyuncu girdi gönderdi; bu, tuşları değiştiğinde olur.</td></tr>
+  <tr><td><code>onPlayerInput(player, prevInput)</code></td><td>Oyuncunun tuşları değişti; yenileri <code>player.input</code>'ta.</td></tr>
+  <tr><td><code>onPlayerAction(player, actionId, isPressed)</code></td><td><code>setActionKeys(true)</code> açık odalarda 1 ile 6 arası bir aksiyon tuşuna basıldı ya da bırakıldı.</td></tr>
+  <tr><td><code>onPlayerBallKick(player, discIndexes)</code></td><td><code>discIndexes</code>, vuruşun ulaştığı her diski <code>getDiscProperties</code>'teki indeksiyle listeler; top 0'dır.</td></tr>
+  <tr><td><code>onTeamGoal(team)</code>, <code>onTeamVictory(scores)</code></td><td></td></tr>
+  <tr><td><code>onGameStart(byPlayer)</code>, <code>onGameStop(byPlayer)</code></td><td></td></tr>
+  <tr><td><code>onGamePause(byPlayer)</code>, <code>onGameUnpause(byPlayer)</code></td><td></td></tr>
+  <tr><td><code>onGameTick()</code></td><td>Devam eden ve duraklatılmamış bir maçın her tick'inde.</td></tr>
+  <tr><td><code>onPositionsReset()</code></td><td>Golden sonra, bir sonraki kickoff'tan önce.</td></tr>
+  <tr><td><code>onStadiumChange(name, byPlayer)</code></td><td></td></tr>
+  <tr><td><code>onKickRateLimitSet(min, rate, burst, byPlayer)</code>, <code>onTeamsLockChange(locked, byPlayer)</code></td><td></td></tr>
+  <tr><td><code>onKickRateLimitReached(player)</code></td><td>Oyuncu, kick rate limit'te hakkı kalmamışken şut tuşuna bastı; şut bekler. Makro kullananları yakalamak için işe yarar.</td></tr>
+  <tr><td><code>onJointBreak(index)</code></td><td>O indeksteki joint <code>breakLength</code>'i aşacak kadar gerildi ve koptu; sonraki joint'ler bir aşağı kaydı.</td></tr>
+  <tr><td><code>onCollisionDiscVsDisc(disc1, disc2)</code></td><td>İki disk birbirine çarpıp sekti; disk indeksleri <code>getDiscProperties</code>'teki gibi.</td></tr>
+  <tr><td><code>onCollisionDiscVsPlane(disc, planeIndex)</code>, <code>onCollisionDiscVsSegment(disc, segmentIndex)</code>, <code>onCollisionDiscVsVertex(disc, vertexIndex)</code></td><td>Bir disk stadyumun o indeksteki plane'inden, segmentinden ya da vertex'inden sekti.</td></tr>
+  <tr><td><code>onRoomLink(url)</code></td><td>Oda kaydolunca linki.</td></tr>
+  <tr><td><code>onLobbyDisconnect(retryInMs)</code></td><td>Lobiye ulaşılamıyor. WebRTC'deki oyuncular oynamaya devam eder; lobi dönene kadar yeni oyuncu giremez.</td></tr>
+  <tr><td><code>onLobbyReconnect()</code></td><td>Aynı oda linkiyle yeniden kaydolundu.</td></tr>
+</table>
+<p>Direkten dönen top, topun (disk 0) direğin disk indeksiyle çarpışmasıdır; topa dokunuş, topun bir oyuncunun diskiyle çarpışmasıdır.</p>
+
+<h2 id="players">Oyuncu nesnesi</h2>
+<table>
+  <tr><th>Alan</th><th>Anlamı</th></tr>
+  <tr><td><code>id</code>, <code>name</code>, <code>team</code>, <code>admin</code></td><td></td></tr>
+  <tr><td><code>position</code></td><td><code>{ x, y }</code>; diski yoksa null.</td></tr>
+  <tr><td><code>input</code></td><td>Basılı tuşlar, <a href="#flags">girdi bayrakları</a> olarak.</td></tr>
+  <tr><td><code>auth</code></td><td>Oyuncunun kimliği: tarayıcısında kalan, 87 karakterlik base64url P-256 açık anahtarı. Sadece <code>onPlayerJoin</code>'de dolu gelir.</td></tr>
+  <tr><td><code>conn</code></td><td>Oyuncunun ağ adresinin hex hali. Sadece <code>onPlayerJoin</code>'de dolu gelir.</td></tr>
+  <tr><td><code>country</code></td><td>Oyuncunun bayrağının küçük harfli iki harfli kodu, bayrak yoksa boş.</td></tr>
+</table>
+
+<h2 id="customizing">Oyunu özelleştirme</h2>
+<h3>Tek oyuncunun fiziği</h3>
+<pre><code>room.setPlayerPhysics(player.id, { kickStrength: 7, acceleration: 0.12, radius: 17 });
+room.getPlayerPhysics(player.id); // { kickStrength: 7, acceleration: 0.12, radius: 17 }
+room.setPlayerPhysics(player.id, null); // stadyumunkine geri döner</code></pre>
+<p><code>radius bCoef invMass damping acceleration kickingAcceleration kickingDamping kickStrength kickback</code> alanlarından istediklerin; vermediklerin stadyumun <code>playerPhysics</code> değerinde kalır. Değişiklik sen temizleyene kadar kickoff'lar boyunca sürer.</p>
+<h3>Oyun ekranına yazı</h3>
+<pre><code>room.setHudItem('skor', { text: '3 turun 2. turu', x: 0.5, y: 0.12, align: 'center', color: 0xffd34d, size: 22 });
+room.clearHudItem('skor');</code></pre>
+<p><code>x</code> ve <code>y</code>, yazıyı sol üstten başlayarak ekranın oranı olarak yerleştirir. Aynı id ile <code>setHudItem</code> çağırmak yazıyı değiştirir. En fazla 100 karakterlik 16 yazı, boyut 8 ile 64 arası. Sonradan katılan oyuncular da görür.</p>
+<h3>Kamera</h3>
+<pre><code>room.setCamera({ playerId: scorer.id }, 1.6); // bir oyuncuyu takip et, yakınlaştırarak
+room.setCamera({ discIndex: 0 });              // top
+room.setCamera({ x: 0, y: 0 }, 0.8);           // sabit bir nokta
+room.setCamera(null);                          // normale dön</code></pre>
+<p>0,25 ile 4 arasındaki zoom, her oyuncunun kendi görüş ayarıyla çarpılır.</p>
+<h3>Formalar</h3>
+<p><code>setPlayerColors(id, angle, textColor, colors)</code> bir oyuncuya takımınki yerine en fazla beş şeritli kendi formasını giydirir; <code>clearPlayerColors(id)</code> çıkarır.</p>
+<h3 id="joints">Joint'ler</h3>
+<pre><code>// Topla oyuncu arasında 150 birimden fazla gerilince kopan bir ip
+room.addJoint({ d0: { discIndex: 0 }, d1: { playerId: player.id }, length: [0, 120], strength: 0.05, breakLength: 150 });
+room.onJointBreak = (index) =&gt; room.sendAnnouncement('İp koptu');</code></pre>
+<p>Bir uç ya stadyum diski (<code>{ discIndex }</code>, stadyumun disk sayısından küçük) ya da oyuncudur (<code>{ playerId }</code>); oyuncu sahada değilken joint'i bekler. <code>length</code> verilmezse joint eklendiği andaki uzaklık olur, sayı onu sabitler, <code>[min, max]</code> bir aralığa izin verir. <code>strength</code> <code>'rigid'</code> (varsayılan) ya da yay katsayısı, <code>color</code> bir sayı ya da <code>'transparent'</code> (varsayılan), <code>breakLength</code> ise kopma uzaklığıdır; verilmezse joint hiç kopmaz. Joint'ler maç bitene kadar sürer. Liste stadyumun kendi joint'leriyle başlar, yani <code>removeJoint</code> onları da kaldırır.</p>
+<h3>Aksiyon tuşları</h3>
+<p><code>setActionKeys(true)</code>, oyuncuların altı ek tuş göndermesine izin verir; varsayılanları Q, E, R, F, C ve V. Her basış ve bırakış <code>onPlayerAction(player, actionId, isPressed)</code> olarak gelir; tuşların kendiliğinden bir etkisi yoktur.</p>
+<p>Tarayıcıda oda açan host'lar bunların çoğunu kod yazmadan, odalarındaki Mods düğmesinden kullanabilir.</p>
+
+<h2 id="flags">Bayraklar</h2>
+<pre><code>room.InputFlags      // up 1, down 2, left 4, right 8, kick 16
+room.CollisionFlags  // ball 1, red 2, blue 4, redKO 8, blueKO 16, wall 32, all 63,
+                     // kick 64, score 128, c0 1&lt;&lt;28, c1 1&lt;&lt;29, c2 1&lt;&lt;30, c3 1&lt;&lt;31</code></pre>
+<p>Aksiyon tuşları açıkken <code>player.input</code>, 1 ile 6 numaralı aksiyonları 32, 64, 128, 256, 512 ve 1024 bitleri olarak da taşır.</p>
+
+<h2 id="bots">Oyuncu olarak katılmak</h2>
+<pre><code>const { session, auth, key } = await golix.joinRoom({
+  room: 'https://golix.cosmosfutsal.com/play?c=&lt;id&gt;',
+  name: 'bot',
+});
+session.send({ type: 'chat', text: 'selam' });
+session.onEvent((event) =&gt; console.log(event));</code></pre>
+<p><code>key</code>'i sakla ve aynı <code>auth</code> ile tekrar girmek için <code>key</code> olarak geri ver. Reddedilen katılım, <code>reason</code>'ı <code>password</code>, <code>full</code>, <code>banned</code>, <code>invalid</code>, <code>rateLimited</code>, <code>captcha</code>, <code>connLimit</code>, <code>version</code> (oda başka bir Golix sürümü çalıştırıyor) ya da <code>closed</code> olan bir <code>golix.JoinError</code> ile sonuçlanır. Odada zaten bulunan bir anahtarla tekrar girmek eski bağlantının yerine geçer.</p>
+
+<h2 id="replays">Tekrarlar</h2>
+<p><code>golix.decodeReplay(bytes)</code>, <code>golix.encodeReplay(replay)</code> ve <code>golix.trimReplay(replay, fromFrame, toFrame)</code>, <code>.glx</code> tekrarlarını okur, yazar ve keser. Oyun saniyede 60 kare çalışır; <code>f</code> karesinde biten 10 saniyelik klip <code>trimReplay(replay, f - 600, f)</code>'dir. Tekrarlar oyunda oda listesinden açılır; oynadığın her maç da oraya kaydedilir ve son 50 maç tarayıcıda kalır. <code>/replay?url=&lt;dosyanın https adresi&gt;&amp;t=90</code> gibi bir link tekrarı 90. saniyeden açar.</p>
+
+<h2 id="stadiums">Stadyum dosyaları</h2>
+<p>Stadyum, tek bir nesne içeren JSON5 metin dosyasıdır (<code>.hbs</code>). <code>name</code>, <code>width</code> ve <code>height</code> dışındaki her alanın varsayılanı vardır; <code>null</code> yazmak alanı hiç yazmamakla aynıdır.</p>
+<table>
+  <tr><th>Alan</th><th>Anlamı</th></tr>
+  <tr><td><code>name</code></td><td>Odada görünen ad.</td></tr>
+  <tr><td><code>width</code>, <code>height</code></td><td>Kameranın içinde kaldığı alanın yarı boyutu.</td></tr>
+  <tr><td><code>maxViewWidth</code></td><td>Ekran bu genişlikten fazlasını gösterecekse yakınlaştırır; 0 (varsayılan) sınırsız.</td></tr>
+  <tr><td><code>cameraFollow</code></td><td><code>"ball"</code> (varsayılan) topu ve oyuncuyu, <code>"player"</code> sadece oyuncuyu takip eder.</td></tr>
+  <tr><td><code>spawnDistance</code></td><td>Spawn noktası yoksa takımların kickoff'ta merkeze olan uzaklığı. Varsayılan 200.</td></tr>
+  <tr><td><code>redSpawnPoints</code>, <code>blueSpawnPoints</code></td><td><code>[[x, y], ...]</code> kickoff konumları, oyuncu sırasıyla dağıtılır; maç sırasında takıma giren oyuncu sonuncusunu alır.</td></tr>
+  <tr><td><code>kickOffReset</code></td><td><code>"partial"</code> (varsayılan) kickoff'ta topu ve oyuncuları, <code>"full"</code> bütün diskleri sıfırlar.</td></tr>
+  <tr><td><code>canBeStored</code></td><td>Oyuncular stadyumu kaydedebilir mi. Varsayılan true.</td></tr>
+  <tr><td><code>bg</code></td><td><code>{ type, width, height, kickOffRadius, cornerRadius, goalLine, color }</code>; <code>type</code> <code>"grass"</code>, <code>"hockey"</code> ya da <code>"none"</code> (varsayılan), renk varsayılanı <code>"718C5A"</code>.</td></tr>
+  <tr><td><code>traits</code></td><td>Adlandırılmış varsayılan alan grupları; <code>"trait": "ad"</code> yazan bir nesne, vermediği alanları o gruptan alır.</td></tr>
+  <tr><td><code>vertexes</code></td><td><code>{ x, y, bCoef, cMask, cGroup }</code>: disklerin sektiği noktalar.</td></tr>
+  <tr><td><code>segments</code></td><td><code>{ v0, v1, curve, curveF, bias, bCoef, cMask, cGroup, vis, color }</code>: iki vertex arasındaki çizgiler. <code>curve</code> çizgiyi o kadar derece büker; <code>bias</code> çizgiyi tek taraflı ve o kalınlıkta yapar.</td></tr>
+  <tr><td><code>planes</code></td><td><code>{ normal: [x, y], dist, bCoef, cMask, cGroup }</code>: sonsuz duvarlar, genelde dış sınırlar.</td></tr>
+  <tr><td><code>goals</code></td><td><code>{ p0: [x, y], p1: [x, y], team }</code>: <code>score</code> bayraklı bir disk geçince diğer takıma gol yazan çizgi.</td></tr>
+  <tr><td><code>discs</code></td><td><code>{ pos, speed, gravity, radius, invMass, damping, bCoef, color, cMask, cGroup }</code>: direkler, ek toplar ve yuvarlak olan her şey. <code>invMass: 0</code> olan disk hareket etmez.</td></tr>
+  <tr><td><code>joints</code></td><td><code>{ d0, d1, length, strength, color, breakLength }</code>: iki diski birbirine bağlar. <code>length</code> null başlangıçtaki uzaklığı korur, sayı onu sabitler, <code>[min, max]</code> bir aralığa izin verir; <code>strength</code> <code>"rigid"</code> (varsayılan) ya da yay için bir sayı; <code>breakLength</code>, diskler bundan daha fazla uzaklaşınca joint'i koparır.</td></tr>
+  <tr><td><code>playerPhysics</code></td><td><code>{ radius, bCoef, invMass, damping, acceleration, kickingAcceleration, kickingDamping, kickStrength, kickback, gravity, cGroup }</code>.</td></tr>
+  <tr><td><code>ballPhysics</code></td><td>Top için bir disk (top her zaman gol atar ve vurulabilir) ya da ilk diski top yapmak için <code>"disc0"</code>.</td></tr>
+</table>
+<ul>
+  <li>Renkler <code>"RRGGBB"</code>, <code>[r, g, b]</code> ya da <code>"transparent"</code> olur. Şeffaf bir diskin dış çizgisi yine görünür; şeffaf bir segment, <code>vis</code> false değilse beyaz çizilir.</li>
+  <li>Çarpışma bayrakları ad listeleridir: <code>["ball", "red", "c0"]</code>. İki nesne, her birinin <code>cGroup</code>'u diğerinin <code>cMask</code>'ıyla en az bir bayrak paylaştığında çarpışır.</li>
+  <li>Varsayılanlar: vertex, segment ve plane'lerde <code>bCoef</code> 1, <code>cGroup</code> wall ve <code>cMask</code> all; disklerde yarıçap 10, <code>invMass</code> 1, damping 0,99, <code>bCoef</code> 0,5, renk beyaz, <code>cGroup</code> ve <code>cMask</code> all.</li>
+  <li>Sınırlar: vertex, segment, plane, kale ve joint'ten her birinden 4096, top dahil 255 disk ve dosya başına bir milyon karakter. Yanlış tipte bir alan (metin olarak yazılmış bir sayı gibi) dosyayı geçersiz kılar.</li>
+  <li>Top ve stadyum diskleri oyuncuların üstüne çizilir.</li>
+</ul>
+
+<h2 id="protection">Oda koruması</h2>
+<p>Her oda, hiç kod yazmadan şunlara sahiptir:</p>
+<ul>
+  <li>Tek bir adres lobiye aynı anda 30 bağlantı açabilir, 10 saniyede en fazla 30 yeni bağlantı kurabilir.</li>
+  <li>Tek bir adresin her odaya dakikada 5 katılma denemesi hakkı vardır.</li>
+  <li>Saniyede 300'den fazla mesaj gönderen bağlantı atılır ve bir dakika içeri giremez.</li>
+  <li>Sohbet oyuncu başına hız sınırlıdır.</li>
+  <li><strong>İstila koruması.</strong> 10 saniye içinde yeni anahtarlı 6 oyuncu girerse oda, 5 dakika boyunca her yeni gelenden captcha ister ve bunu duyurur. Odanın ilk 2 dakikası ve daha önce girmiş anahtarlar sayılmaz; böylece yeniden başlayan bir oda, koruma devreye girmeden dolabilir.</li>
+  <li>Bir kez captcha çözen oyuncu, tarayıcısının anahtarına bağlı bir kanıt alır ve 30 gün boyunca hiçbir odada captcha çözmez. Her girişte yeni anahtar üreten istilacılar her seferinde çözer.</li>
+  <li>Oda açmak bir kez captcha ister: Create Room düğmesinden ya da script için <a href="/headlesstoken/">/headlesstoken</a> sayfasından alınan token'la. <code>roomSecret</code>'ı ile geri dönen oda token istemez.</li>
+  <li>Golix yöneticileri bir kimliği tek seferde bütün odalardan banlayabilir; o kimlik katılırken reddedilir ve içinde bulunduğu odalardan atılır. <code>kickPlayer</code> ile verilen banlar sadece o odada geçerlidir.</li>
+</ul>
+<p>Captcha, Cloudflare Turnstile'dır. <code>setRequireRecaptcha(true)</code> onu kalıcı olarak açar. Turnstile anahtarı olmayan bir lobide hem bu ayar hem istila koruması, adres başına 30 saniyede bir katılma denemesine izin verir.</p>
+</main>
+</div>
+<script>
+  for (const a of document.querySelectorAll('.langs a')) a.addEventListener('click', () => { try { localStorage.setItem('golix.docsLang', a.lang); } catch {} });
+</script>
+</body>
+</html>

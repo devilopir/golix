@@ -1,0 +1,25 @@
+{
+  "name": "@golix/headless",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@golix/client": "workspace:*",
+    "@golix/replay": "workspace:*",
+    "@golix/room": "workspace:*",
+    "@golix/server": "workspace:*",
+    "@golix/shared": "workspace:*",
+    "node-datachannel": "^0.33.6"
+  },
+  "scripts": {
+    "typecheck": "tsc -p .",
+    "page": "vite page",
+    "build:page": "vite build page"
+  },
+  "devDependencies": {
+    "vite": "^8.3.8"
+  }
+}

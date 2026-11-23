@@ -1,0 +1,79 @@
+# Joins the network of the existing Caddy proxy, which routes golix.cosmosfutsal.com here.
+# TURN_SECRET and TURN_HOST (and optionally TURN_PORT, TURN_REALM, TURN_MIN_PORT, TURN_MAX_PORT, TURN_TTL_SECONDS) come from deploy/.env.
+# The firewall must let in 3478/udp, 3478/tcp and the relay range (default 49160-49359/udp) to the TURN host.
+services:
+  server:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+      target: server
+    container_name: golix-server
+    restart: unless-stopped
+    networks: [proxy]
+    volumes:
+      - telemetry:/data
+    environment:
+      # One JSON line per player session's connection report; see packages/server/src/report.ts.
+      TELEMETRY_FILE: /data/telemetry.jsonl
+      # Signs the proofs that let players who solved a captcha skip it for 30 days.
+      LOBBY_KEY_FILE: /data/lobby-key.pem
+      # One auth per line, '#' for the reason: banned from every room within 30 seconds of saving.
+      BANS_FILE: /data/bans.txt
+      # Rooms that opened with a token from /headlesstoken; they reopen with their secret without one.
+      KNOWN_ROOMS_FILE: /data/known-rooms.txt
+      STUN_URLS: stun:${TURN_HOST}:${TURN_PORT:-3478}
+      TURN_URLS: turn:${TURN_HOST:?set TURN_HOST (an address not behind a proxy) in deploy/.env}:${TURN_PORT:-3478}?transport=udp,turn:${TURN_HOST}:${TURN_PORT:-3478}?transport=tcp
+      TURN_SECRET: ${TURN_SECRET:?set TURN_SECRET in deploy/.env}
+      TURN_TTL_SECONDS: ${TURN_TTL_SECONDS:-86400}
+      # Cloudflare Turnstile keys; without them rooms cannot ask joiners for a captcha.
+      TURNSTILE_SITE_KEY: ${TURNSTILE_SITE_KEY:-}
+      TURNSTILE_SECRET: ${TURNSTILE_SECRET:-}
+
+  web:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+      target: web
+      args:
+        VITE_SERVER_URL: wss://golix.cosmosfutsal.com
+    container_name: golix-web
+    restart: unless-stopped
+    networks: [proxy]
+
+  # Host networking: Docker publishes large UDP port ranges poorly, and relay addresses must be the machine's own.
+  turn:
+    image: coturn/coturn:4.19.2
+    container_name: golix-turn
+    restart: unless-stopped
+    network_mode: host
+    command:
+      - -n
+      - --log-file=stdout
+      - --listening-port=${TURN_PORT:-3478}
+      - --min-port=${TURN_MIN_PORT:-49160}
+      - --max-port=${TURN_MAX_PORT:-49359}
+      - --use-auth-secret
+      - --static-auth-secret=${TURN_SECRET:?set TURN_SECRET in deploy/.env}
+      - --realm=${TURN_REALM:-golix.cosmosfutsal.com}
+      - --fingerprint
+      - --no-tls
+      - --no-multicast-peers
+      # Relays only between players on the internet, never into this machine or its private networks.
+      - --denied-peer-ip=0.0.0.0-0.255.255.255
+      - --denied-peer-ip=10.0.0.0-10.255.255.255
+      - --denied-peer-ip=100.64.0.0-100.127.255.255
+      - --denied-peer-ip=127.0.0.0-127.255.255.255
+      - --denied-peer-ip=169.254.0.0-169.254.255.255
+      - --denied-peer-ip=172.16.0.0-172.31.255.255
+      - --denied-peer-ip=192.168.0.0-192.168.255.255
+      - --denied-peer-ip=::1
+      - --denied-peer-ip=fc00::-fdff:ffff:ffff:ffff:ffff:ffff:ffff:ffff
+      - --denied-peer-ip=fe80::-febf:ffff:ffff:ffff:ffff:ffff:ffff:ffff
+
+volumes:
+  telemetry:
+
+networks:
+  proxy:
+    name: certstream_app
+    external: true

@@ -1,0 +1,16 @@
+{
+  "name": "@golix/room",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./channel": "./src/channel.ts",
+    "./host": "./src/host.ts"
+  },
+  "dependencies": {
+    "@golix/shared": "workspace:*"
+  },
+  "scripts": {
+    "typecheck": "tsc -p . && tsc -p test"
+  }
+}

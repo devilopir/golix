@@ -1,0 +1,264 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Golix for developers</title>
+<meta name="description" content="Host Golix rooms from Node, join rooms as a bot, customize the game, write stadiums and keep raids out.">
+<script>
+  // Turkish browsers land on the Turkish page unless the reader picked a language before.
+  try { if (!localStorage.getItem('golix.docsLang') && navigator.language.toLowerCase().startsWith('tr')) location.replace('/docs/tr/'); } catch {}
+</script>
+<link rel="icon" href="/favicon.png">
+<link rel="stylesheet" href="/docs/docs.css">
+<link rel="alternate" hreflang="en" href="/docs/">
+<link rel="alternate" hreflang="tr" href="/docs/tr/">
+</head>
+<body>
+<div class="layout">
+<nav>
+  <a class="brand" href="/"><img src="/icon.png" alt="">Golix</a>
+  <div class="langs"><a href="/docs/" aria-current="page" lang="en">English</a><a href="/docs/tr/" lang="tr">Türkçe</a></div>
+  <ol>
+    <li><a href="#start">Getting started</a></li>
+    <li><a href="#config">Room config</a></li>
+    <li><a href="#methods">Room methods</a></li>
+    <li><a href="#events">Room events</a></li>
+    <li><a href="#players">Player objects</a></li>
+    <li><a href="#customizing">Customizing the game</a></li>
+    <li><a href="#flags">Flags</a></li>
+    <li><a href="#bots">Joining as a player</a></li>
+    <li><a href="#replays">Replays</a></li>
+    <li><a href="#stadiums">Stadium files</a></li>
+    <li><a href="#protection">Room protection</a></li>
+  </ol>
+</nav>
+<main>
+<h1>Golix for developers</h1>
+<p class="lead">Host Golix rooms from Node with <code>golix.js</code>, script what happens in them, join rooms as a bot and write your own stadiums.</p>
+
+<h2 id="start">Getting started</h2>
+<p><code>golix.js</code> needs Node 22 or later.</p>
+<pre><code>npm install golix.js</code></pre>
+<p>A room registers with the public lobby, and players connect straight to your process over WebRTC, or through the lobby when a direct connection fails.</p>
+<pre><code>const golix = require('golix.js');
+
+golix().then((HBInit) =&gt; {
+  const room = HBInit({
+    roomName: 'My room',
+    maxPlayers: 12,
+    noPlayer: true,
+    lobby: 'wss://golix.cosmosfutsal.com',
+    // 22 characters of A-Z, a-z, 0-9, - and _: keeps the room link across restarts.
+    roomSecret: process.env.ROOM_SECRET,
+    // Only the first time this roomSecret opens a room: from https://golix.cosmosfutsal.com/headlesstoken
+    token: process.env.ROOM_TOKEN,
+  });
+  room.onRoomLink = (link) =&gt; console.log(link);
+  room.onPlayerJoin = (player) =&gt; room.sendAnnouncement(`Welcome ${player.name}`, player.id);
+});</code></pre>
+<p>With ES modules: <code>import golix from 'golix.js'; const HBInit = await golix();</code></p>
+<p>Callbacks run inside the room's tick, 60 times a second. Methods called from them take effect on the next tick, and an exception thrown by a callback is logged without stopping the room.</p>
+
+<h2 id="config">Room config</h2>
+<table>
+  <tr><th>Field</th><th>Meaning</th></tr>
+  <tr><td><code>roomName</code></td><td>Up to 40 characters.</td></tr>
+  <tr><td><code>playerName</code></td><td>Name of the host player; leave out with <code>noPlayer: true</code>.</td></tr>
+  <tr><td><code>password</code></td><td>Up to 30 characters.</td></tr>
+  <tr><td><code>maxPlayers</code></td><td>2 to 30, default 12.</td></tr>
+  <tr><td><code>public</code></td><td>Whether the room is listed. Default true.</td></tr>
+  <tr><td><code>geo</code></td><td><code>{ code, lat, lon }</code> shown in the room list.</td></tr>
+  <tr><td><code>noPlayer</code></td><td>Run the room without a host player.</td></tr>
+  <tr><td><code>lobby</code></td><td><code>ws://</code> or <code>wss://</code> lobby to register with.</td></tr>
+  <tr><td><code>roomSecret</code></td><td>With <code>lobby</code>: the secret the room id is derived from, so the link survives restarts.</td></tr>
+  <tr><td><code>token</code></td><td>With <code>lobby</code>: a room token from <a href="/headlesstoken/">/headlesstoken</a>, needed the first time a <code>roomSecret</code> opens a room. It works once, for ten minutes; the same <code>roomSecret</code> reopens the room later without one.</td></tr>
+  <tr><td><code>server</code></td><td>Without <code>lobby</code>: serve the room from your own lobby, given as a running server or its options (default port 8787).</td></tr>
+  <tr><td><code>clientUrl</code></td><td>Origin used in the room link.</td></tr>
+  <tr><td><code>webrtc</code></td><td><code>{ bindAddress, portRange: [first, last], iceServers }</code> for the WebRTC connections players open to your process.</td></tr>
+</table>
+
+<h2 id="methods">Room methods</h2>
+<h3>Players and chat</h3>
+<table>
+  <tr><th>Method</th><th>Notes</th></tr>
+  <tr><td><code>sendChat(message, targetId?)</code></td><td>As the host player; up to 140 characters.</td></tr>
+  <tr><td><code>sendAnnouncement(msg, targetId?, color?, style?, sound?)</code></td><td>Style <code>normal</code>, <code>bold</code>, <code>italic</code>, <code>small</code>, <code>small-bold</code> or <code>small-italic</code>; sound 0, 1 or 2; up to 1000 characters.</td></tr>
+  <tr><td><code>setPlayerAdmin(id, admin)</code></td><td></td></tr>
+  <tr><td><code>setPlayerTeam(id, team)</code></td><td>0 spectators, 1 red, 2 blue.</td></tr>
+  <tr><td><code>kickPlayer(id, reason, ban)</code></td><td>A ban matches the player's auth and conn.</td></tr>
+  <tr><td><code>clearBan(id)</code>, <code>clearBans()</code></td><td></td></tr>
+  <tr><td><code>getPlayer(id)</code>, <code>getPlayerList()</code></td><td></td></tr>
+  <tr><td><code>reorderPlayers(ids, moveToTop)</code></td><td></td></tr>
+  <tr><td><code>setPlayerAvatar(id, avatar)</code></td><td>Null gives back the avatar the player chose.</td></tr>
+</table>
+<h3>Game</h3>
+<table>
+  <tr><th>Method</th><th>Notes</th></tr>
+  <tr><td><code>startGame()</code>, <code>stopGame()</code>, <code>pauseGame(paused)</code></td><td></td></tr>
+  <tr><td><code>setScoreLimit(n)</code>, <code>setTimeLimit(minutes)</code></td><td>0 to 99; only between games.</td></tr>
+  <tr><td><code>setTeamsLock(locked)</code></td><td></td></tr>
+  <tr><td><code>setTeamColors(team, angle, textColor, colors)</code></td><td>Up to five stripes.</td></tr>
+  <tr><td><code>setKickRateLimit(min, rate, burst)</code></td><td></td></tr>
+  <tr><td><code>getScores()</code>, <code>getBallPosition()</code></td><td><code>scores.timeLimit</code> is in seconds.</td></tr>
+  <tr><td><code>setCustomStadium(text)</code></td><td>Takes a <a href="#stadiums">stadium file</a>; throws when the text is not a valid one.</td></tr>
+  <tr><td><code>setDefaultStadium(name)</code></td><td>Built-ins: <code>Standard</code>, <code>Wide Goals</code>, <code>Compact</code>, <code>Stadium</code>, <code>Oval</code>, <code>Rink</code>, <code>Big Rink</code>, <code>Stadium Wide Goals</code>, <code>Big Oval</code>, <code>Colossal</code>. <code>Classic</code>, <code>Easy</code>, <code>Small</code>, <code>Big</code>, <code>Rounded</code>, <code>Hockey</code>, <code>Big Hockey</code>, <code>Big Easy</code>, <code>Big Rounded</code> and <code>Huge</code> name the same ones in that order.</td></tr>
+  <tr><td><code>startRecording()</code>, <code>stopRecording()</code></td><td>Returns a <code>.glx</code> replay as a <code>Uint8Array</code>.</td></tr>
+  <tr><td><code>setPassword(pass)</code></td><td>Null or empty removes it.</td></tr>
+  <tr><td><code>setRoomName(name)</code>, <code>setMaxPlayers(n)</code></td><td>Change the room while it runs, in the room list too. <code>n</code> is 2 to 30; players already in stay when it drops below their number.</td></tr>
+  <tr><td><code>setTeamName(team, name)</code></td><td>The name shown for red or blue, up to 20 characters; an empty one goes back to Red or Blue.</td></tr>
+  <tr><td><code>setGameProperties({ red, blue, time, scoreLimit, timeLimit })</code></td><td>Changes the running game: scores, the clock in seconds, and limits (<code>timeLimit</code> in minutes). Fields you leave out stay. To add a minute: <code>setGameProperties({ timeLimit: room.getScores().timeLimit / 60 + 1 })</code>.</td></tr>
+</table>
+<h3>Discs</h3>
+<table>
+  <tr><th>Method</th><th>Notes</th></tr>
+  <tr><td><code>getDiscCount()</code></td><td>Stadium discs, with the ball at 0, then player discs.</td></tr>
+  <tr><td><code>getDiscProperties(index)</code>, <code>setDiscProperties(index, props)</code></td><td>Fields <code>x y xspeed yspeed xgravity ygravity radius bCoeff invMass damping color cMask cGroup</code>; floats are stored as 32-bit.</td></tr>
+  <tr><td><code>getPlayerDiscProperties(id)</code>, <code>setPlayerDiscProperties(id, props)</code></td><td>Players get fresh discs at every kickoff, so changes last until then. For lasting changes use <a href="#customizing"><code>setPlayerPhysics</code></a>.</td></tr>
+  <tr><td><code>addJoint(joint)</code>, <code>removeJoint(index)</code>, <code>getJointCount()</code></td><td>Ties discs together in the running game, players included. See <a href="#joints">joints</a>.</td></tr>
+</table>
+<div class="note">A call with a value players could not receive, such as a color above 32 bits, a fractional flag or team 3, is dropped with a warning in the console instead of breaking the room.</div>
+<h3>Protection</h3>
+<table>
+  <tr><th>Method</th><th>Notes</th></tr>
+  <tr><td><code>setRequireRecaptcha(on)</code></td><td>Asks every joiner for a captcha. See <a href="#protection">room protection</a>.</td></tr>
+  <tr><td><code>setRaidProtection({ joins, seconds, minutes })</code></td><td>Tunes the automatic raid guard; null turns it off.</td></tr>
+  <tr><td><code>setMaxPlayersPerConn(n)</code></td><td>How many players one network address may have in the room; null for no limit (the default).</td></tr>
+</table>
+
+<h2 id="events">Room events</h2>
+<p>Assign a function to the property.</p>
+<table>
+  <tr><th>Event</th><th>Notes</th></tr>
+  <tr><td><code>onPlayerJoin(player)</code>, <code>onPlayerLeave(player)</code></td><td></td></tr>
+  <tr><td><code>onPlayerChat(player, message)</code></td><td>Return <code>false</code> to keep the message from the others.</td></tr>
+  <tr><td><code>onPlayerKicked(player, reason, ban, byPlayer)</code></td><td></td></tr>
+  <tr><td><code>onPlayerAdminChange(player, byPlayer)</code>, <code>onPlayerTeamChange(player, byPlayer)</code></td><td></td></tr>
+  <tr><td><code>onPlayerActivity(player)</code></td><td>The player sent input, which happens when their keys change.</td></tr>
+  <tr><td><code>onPlayerInput(player, prevInput)</code></td><td>The player's keys changed; <code>player.input</code> holds the new ones.</td></tr>
+  <tr><td><code>onPlayerAction(player, actionId, isPressed)</code></td><td>An action key 1 to 6 went down or up, in rooms with <code>setActionKeys(true)</code>.</td></tr>
+  <tr><td><code>onPlayerBallKick(player, discIndexes)</code></td><td><code>discIndexes</code> lists every disc the kick reached, as in <code>getDiscProperties</code>; the ball is 0.</td></tr>
+  <tr><td><code>onTeamGoal(team)</code>, <code>onTeamVictory(scores)</code></td><td></td></tr>
+  <tr><td><code>onGameStart(byPlayer)</code>, <code>onGameStop(byPlayer)</code></td><td></td></tr>
+  <tr><td><code>onGamePause(byPlayer)</code>, <code>onGameUnpause(byPlayer)</code></td><td></td></tr>
+  <tr><td><code>onGameTick()</code></td><td>Every tick of a running, unpaused game.</td></tr>
+  <tr><td><code>onPositionsReset()</code></td><td>After a goal, before the next kickoff.</td></tr>
+  <tr><td><code>onStadiumChange(name, byPlayer)</code></td><td></td></tr>
+  <tr><td><code>onKickRateLimitSet(min, rate, burst, byPlayer)</code>, <code>onTeamsLockChange(locked, byPlayer)</code></td><td></td></tr>
+  <tr><td><code>onKickRateLimitReached(player)</code></td><td>The player pressed kick while the kick rate limit had none left, so the kick waits. Useful to spot macros.</td></tr>
+  <tr><td><code>onJointBreak(index)</code></td><td>The joint at that index stretched past its <code>breakLength</code> and is gone; later joints moved down by one.</td></tr>
+  <tr><td><code>onCollisionDiscVsDisc(disc1, disc2)</code></td><td>Two discs bounced off each other; disc indexes as in <code>getDiscProperties</code>.</td></tr>
+  <tr><td><code>onCollisionDiscVsPlane(disc, planeIndex)</code>, <code>onCollisionDiscVsSegment(disc, segmentIndex)</code>, <code>onCollisionDiscVsVertex(disc, vertexIndex)</code></td><td>A disc bounced off the stadium's plane, segment or vertex at that index.</td></tr>
+  <tr><td><code>onRoomLink(url)</code></td><td>The room's link, once it is registered.</td></tr>
+  <tr><td><code>onLobbyDisconnect(retryInMs)</code></td><td>The lobby is out of reach. Players on WebRTC keep playing; new ones cannot join until it is back.</td></tr>
+  <tr><td><code>onLobbyReconnect()</code></td><td>Registered again under the same room link.</td></tr>
+</table>
+<p>A post hit is the ball, disc 0, against a post's disc index; a touch is the ball against a player's disc.</p>
+
+<h2 id="players">Player objects</h2>
+<table>
+  <tr><th>Field</th><th>Meaning</th></tr>
+  <tr><td><code>id</code>, <code>name</code>, <code>team</code>, <code>admin</code></td><td></td></tr>
+  <tr><td><code>position</code></td><td><code>{ x, y }</code>, or null without a disc.</td></tr>
+  <tr><td><code>input</code></td><td>The keys held, as <a href="#flags">input flags</a>.</td></tr>
+  <tr><td><code>auth</code></td><td>The player's identity: an 87-character base64url P-256 public key that stays with their browser. Only set in <code>onPlayerJoin</code>.</td></tr>
+  <tr><td><code>conn</code></td><td>The hex of the player's network address. Only set in <code>onPlayerJoin</code>.</td></tr>
+  <tr><td><code>country</code></td><td>The lowercase two-letter code of the player's flag, empty when none.</td></tr>
+</table>
+
+<h2 id="customizing">Customizing the game</h2>
+<h3>Physics for one player</h3>
+<pre><code>room.setPlayerPhysics(player.id, { kickStrength: 7, acceleration: 0.12, radius: 17 });
+room.getPlayerPhysics(player.id); // { kickStrength: 7, acceleration: 0.12, radius: 17 }
+room.setPlayerPhysics(player.id, null); // back to the stadium's</code></pre>
+<p>Any of <code>radius bCoef invMass damping acceleration kickingAcceleration kickingDamping kickStrength kickback</code>; the fields you leave out keep the stadium's <code>playerPhysics</code>. The change lasts across kickoffs until you clear it.</p>
+<h3>Text on the game screen</h3>
+<pre><code>room.setHudItem('score', { text: 'Round 2 of 3', x: 0.5, y: 0.12, align: 'center', color: 0xffd34d, size: 22 });
+room.clearHudItem('score');</code></pre>
+<p><code>x</code> and <code>y</code> place the item as a fraction of the screen from the top left. Calling <code>setHudItem</code> with the same id replaces the item. Up to 16 items of 100 characters, sizes 8 to 64. Players who join later see them too.</p>
+<h3>Camera</h3>
+<pre><code>room.setCamera({ playerId: scorer.id }, 1.6); // follow a player, zoomed in
+room.setCamera({ discIndex: 0 });              // the ball
+room.setCamera({ x: 0, y: 0 }, 0.8);           // a fixed point
+room.setCamera(null);                          // back to normal</code></pre>
+<p>The zoom, 0.25 to 4, multiplies each player's own view setting.</p>
+<h3>Kits</h3>
+<p><code>setPlayerColors(id, angle, textColor, colors)</code> dresses one player in their own kit instead of the team's, with up to five stripes; <code>clearPlayerColors(id)</code> takes it off.</p>
+<h3 id="joints">Joints</h3>
+<pre><code>// A rope from the ball to a player that snaps past 150 units
+room.addJoint({ d0: { discIndex: 0 }, d1: { playerId: player.id }, length: [0, 120], strength: 0.05, breakLength: 150 });
+room.onJointBreak = (index) =&gt; room.sendAnnouncement('The rope snapped');</code></pre>
+<p>An end is a stadium disc, <code>{ discIndex }</code> below the stadium's disc count, or a player, <code>{ playerId }</code>; a player's joint rests while they are off the field. <code>length</code> defaults to the distance when the joint is added, a number fixes it and <code>[min, max]</code> allows a range. <code>strength</code> is <code>'rigid'</code> (the default) or a spring coefficient, <code>color</code> a number or <code>'transparent'</code> (the default), and <code>breakLength</code> the distance at which it breaks; without one it never does. Joints last until the game ends. The list starts with the stadium's own joints, so <code>removeJoint</code> removes those too.</p>
+<h3>Action keys</h3>
+<p><code>setActionKeys(true)</code> lets players send six extra keys, Q, E, R, F, C and V by default. Each press and release arrives as <code>onPlayerAction(player, actionId, isPressed)</code>; the keys do nothing by themselves.</p>
+<p>Room hosts who play in the browser get most of this without code, from the Mods button in their room.</p>
+
+<h2 id="flags">Flags</h2>
+<pre><code>room.InputFlags      // up 1, down 2, left 4, right 8, kick 16
+room.CollisionFlags  // ball 1, red 2, blue 4, redKO 8, blueKO 16, wall 32, all 63,
+                     // kick 64, score 128, c0 1&lt;&lt;28, c1 1&lt;&lt;29, c2 1&lt;&lt;30, c3 1&lt;&lt;31</code></pre>
+<p>With action keys on, <code>player.input</code> also carries them as bits 32, 64, 128, 256, 512 and 1024 for actions 1 to 6.</p>
+
+<h2 id="bots">Joining as a player</h2>
+<pre><code>const { session, auth, key } = await golix.joinRoom({
+  room: 'https://golix.cosmosfutsal.com/play?c=&lt;id&gt;',
+  name: 'bot',
+});
+session.send({ type: 'chat', text: 'hi' });
+session.onEvent((event) =&gt; console.log(event));</code></pre>
+<p>Store <code>key</code> and pass it back as <code>key</code> to join again with the same <code>auth</code>. A refused join rejects with a <code>golix.JoinError</code> whose <code>reason</code> is <code>password</code>, <code>full</code>, <code>banned</code>, <code>invalid</code>, <code>rateLimited</code>, <code>captcha</code>, <code>connLimit</code>, <code>version</code> (the room runs another Golix version) or <code>closed</code>. Joining again with a key that is already in the room replaces the older connection.</p>
+
+<h2 id="replays">Replays</h2>
+<p><code>golix.decodeReplay(bytes)</code>, <code>golix.encodeReplay(replay)</code> and <code>golix.trimReplay(replay, fromFrame, toFrame)</code> read, write and cut <code>.glx</code> replays. The game runs at 60 frames per second, so a 10 second clip ending at frame <code>f</code> is <code>trimReplay(replay, f - 600, f)</code>. Replays open in the game from the room list, where every match you play is also saved; the last 50 stay in the browser. A link like <code>/replay?url=&lt;https address of the file&gt;&amp;t=90</code> opens a replay 90 seconds in.</p>
+
+<h2 id="stadiums">Stadium files</h2>
+<p>A stadium is a JSON5 text file (<code>.hbs</code>) holding one object. Every field but <code>name</code>, <code>width</code> and <code>height</code> has a default; <code>null</code> counts as leaving a field out.</p>
+<table>
+  <tr><th>Field</th><th>Meaning</th></tr>
+  <tr><td><code>name</code></td><td>Shown in the room.</td></tr>
+  <tr><td><code>width</code>, <code>height</code></td><td>Half-size of the area the camera stays in.</td></tr>
+  <tr><td><code>maxViewWidth</code></td><td>Zooms in when a screen would show more than this width; 0 (default) for no limit.</td></tr>
+  <tr><td><code>cameraFollow</code></td><td><code>"ball"</code> (default) follows the ball and the player, <code>"player"</code> only the player.</td></tr>
+  <tr><td><code>spawnDistance</code></td><td>How far from the centre teams line up at kickoff when there are no spawn points. Default 200.</td></tr>
+  <tr><td><code>redSpawnPoints</code>, <code>blueSpawnPoints</code></td><td><code>[[x, y], ...]</code> kickoff positions, taken in player order; a player who joins a team mid-game takes the last one.</td></tr>
+  <tr><td><code>kickOffReset</code></td><td><code>"partial"</code> (default) resets the ball and the players at kickoff, <code>"full"</code> every disc.</td></tr>
+  <tr><td><code>canBeStored</code></td><td>Whether players may keep the stadium. Default true.</td></tr>
+  <tr><td><code>bg</code></td><td><code>{ type, width, height, kickOffRadius, cornerRadius, goalLine, color }</code>; <code>type</code> is <code>"grass"</code>, <code>"hockey"</code> or <code>"none"</code> (default), color default <code>"718C5A"</code>.</td></tr>
+  <tr><td><code>traits</code></td><td>Named sets of default fields; an object with <code>"trait": "name"</code> takes the fields it leaves out from that set.</td></tr>
+  <tr><td><code>vertexes</code></td><td><code>{ x, y, bCoef, cMask, cGroup }</code>: points that discs bounce off.</td></tr>
+  <tr><td><code>segments</code></td><td><code>{ v0, v1, curve, curveF, bias, bCoef, cMask, cGroup, vis, color }</code>: lines between two vertexes. <code>curve</code> bends it by that many degrees; <code>bias</code> makes it one-sided and that thick.</td></tr>
+  <tr><td><code>planes</code></td><td><code>{ normal: [x, y], dist, bCoef, cMask, cGroup }</code>: endless walls, usually the outer bounds.</td></tr>
+  <tr><td><code>goals</code></td><td><code>{ p0: [x, y], p1: [x, y], team }</code>: a line that scores for the other team when a <code>score</code> disc crosses it.</td></tr>
+  <tr><td><code>discs</code></td><td><code>{ pos, speed, gravity, radius, invMass, damping, bCoef, color, cMask, cGroup }</code>: posts, extra balls and anything else round. <code>invMass: 0</code> does not move.</td></tr>
+  <tr><td><code>joints</code></td><td><code>{ d0, d1, length, strength, color, breakLength }</code>: links two discs. <code>length</code> null keeps their starting distance, a number fixes it, <code>[min, max]</code> allows a range; <code>strength</code> <code>"rigid"</code> (default) or a number for a spring; <code>breakLength</code> breaks the joint once its discs are farther apart than that.</td></tr>
+  <tr><td><code>playerPhysics</code></td><td><code>{ radius, bCoef, invMass, damping, acceleration, kickingAcceleration, kickingDamping, kickStrength, kickback, gravity, cGroup }</code>.</td></tr>
+  <tr><td><code>ballPhysics</code></td><td>A disc for the ball, which always scores and can be kicked, or <code>"disc0"</code> to use the first disc as the ball.</td></tr>
+</table>
+<ul>
+  <li>Colors are <code>"RRGGBB"</code>, <code>[r, g, b]</code> or <code>"transparent"</code>. A transparent disc still shows its outline; a transparent segment is drawn white unless <code>vis</code> is false.</li>
+  <li>Collision flags are lists of names: <code>["ball", "red", "c0"]</code>. Two objects collide when each one's <code>cGroup</code> shares a flag with the other's <code>cMask</code>.</li>
+  <li>Defaults: vertexes, segments and planes have <code>bCoef</code> 1, <code>cGroup</code> wall and <code>cMask</code> all; discs radius 10, <code>invMass</code> 1, damping 0.99, <code>bCoef</code> 0.5, color white, <code>cGroup</code> and <code>cMask</code> all.</li>
+  <li>Limits: 4096 vertexes, segments, planes, goals and joints each, 255 discs counting the ball, and one million characters per file. A field of the wrong type, like a number written as text, fails the file.</li>
+  <li>The ball and stadium discs are drawn over the players.</li>
+</ul>
+
+<h2 id="protection">Room protection</h2>
+<p>Every room gets these without any code:</p>
+<ul>
+  <li>One address can hold 30 connections to the lobby and open 30 within 10 seconds.</li>
+  <li>One address gets 5 join attempts a minute per room.</li>
+  <li>A connection that sends more than 300 messages a second is disconnected and kept out for a minute.</li>
+  <li>Chat is rate limited per player.</li>
+  <li><strong>Raid guard.</strong> When 6 players with new keys join within 10 seconds, the room asks every new joiner for a captcha for 5 minutes and announces it. The first 2 minutes of a room and keys that joined before are not counted, so a restarted room fills up again without tripping it.</li>
+  <li>A player who solves a captcha once gets a proof tied to their browser's key and skips captchas in every room for 30 days. Raiders who make a new key for each join solve one every time.</li>
+  <li>Opening a room needs a captcha once: from the Create Room button, or for a script through a token from <a href="/headlesstoken/">/headlesstoken</a>. A room that comes back with its <code>roomSecret</code> needs none.</li>
+  <li>Golix's operators can ban an identity from every room at once; it is turned away at the join and removed from rooms it is in. Bans from <code>kickPlayer</code> stay with the room.</li>
+</ul>
+<p>The captcha is Cloudflare Turnstile. <code>setRequireRecaptcha(true)</code> turns it on for good; on a lobby without Turnstile keys it and the raid guard allow one join attempt per address every 30 seconds instead.</p>
+</main>
+</div>
+<script>
+  for (const a of document.querySelectorAll('.langs a')) a.addEventListener('click', () => { try { localStorage.setItem('golix.docsLang', a.lang); } catch {} });
+</script>
+</body>
+</html>

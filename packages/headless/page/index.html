@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Golix Headless Host</title>
+    <link rel="icon" type="image/png" href="/favicon.png" />
+  </head>
+  <body>
+    <main class="hh">
+      <h1>Headless Host</h1>
+      <p class="hh-muted">Paste a room script that calls <code>HBInit</code> and press Run. The room runs in this tab; keep it open. <code>HBInit</code> is also on <code>window</code> for the developer console.</p>
+      <textarea id="script" spellcheck="false" placeholder="const room = HBInit({ roomName: 'My room', maxPlayers: 12, noPlayer: true });&#10;room.onPlayerJoin = (player) => room.sendAnnouncement('Welcome ' + player.name, player.id);"></textarea>
+      <div class="hh-actions">
+        <button id="run" type="button">Run</button>
+        <button id="stop" type="button" class="hh-secondary" disabled>Stop</button>
+        <a id="link" target="_blank" rel="noopener"></a>
+      </div>
+      <pre id="log" aria-live="polite"></pre>
+    </main>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>

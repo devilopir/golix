@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Golix room token</title>
+<meta name="description" content="Get a token to open a Golix room from a script.">
+<link rel="icon" href="/favicon.png">
+<link rel="stylesheet" href="/docs/docs.css">
+<style>
+  main { max-width: 640px; margin: 0 auto; }
+  #widget { margin: 20px 0; min-height: 70px; }
+  #token { display: none; width: 100%; margin: 8px 0; padding: 10px 12px; border: 1px solid var(--line); border-radius: 6px; background: var(--sunken); color: var(--heading); font: 13px/1.5 ui-monospace, 'SF Mono', Menlo, Consolas, monospace; }
+  button { padding: 7px 14px; border: 0; border-radius: 6px; background: var(--accent); color: #101316; font: 600 14px/1.4 inherit; cursor: pointer; }
+  #status { color: var(--muted); }
+</style>
+</head>
+<body>
+<main>
+  <h1>Room token</h1>
+  <p class="lead">A script needs this token the first time it opens a room: pass it as <code>token</code> in <code>HBInit</code>, next to your <code>roomSecret</code>. It works once, for ten minutes. A room that comes back with the same <code>roomSecret</code> needs no new token.</p>
+  <p class="lead" lang="tr">Script'in bir odayı ilk kez açarken bu token'a ihtiyacı var: <code>HBInit</code>'e <code>roomSecret</code>'ın yanında <code>token</code> olarak ver. Bir kez ve on dakika geçerli. Aynı <code>roomSecret</code> ile yeniden açılan oda yeni token istemez.</p>
+  <div id="widget"></div>
+  <p id="status">Loading the captcha…</p>
+  <input id="token" readonly aria-label="Room token">
+  <button id="copy" type="button" hidden>Copy</button>
+  <p><a href="/docs/#config">Room config in the developer guide</a></p>
+</main>
+<script>
+  const status = document.getElementById('status');
+  const field = document.getElementById('token');
+  const copy = document.getElementById('copy');
+  const fail = (text) => { status.textContent = text; };
+  window.onTurnstileLoad = async () => {
+    const { captchaSiteKey } = await (await fetch('/lobby')).json();
+    if (!captchaSiteKey) return fail('This lobby opens rooms without a token.');
+    status.textContent = 'Solve the captcha to get a token.';
+    turnstile.render('#widget', {
+      sitekey: captchaSiteKey,
+      theme: 'dark',
+      callback: async (solved) => {
+        const res = await fetch('/token', { method: 'POST', body: solved });
+        if (!res.ok) return fail(res.status === 429 ? 'Too many tokens from your address; try again later.' : 'Could not get a token; reload and try again.');
+        field.value = (await res.json()).token;
+        field.style.display = 'block';
+        copy.hidden = false;
+        status.textContent = 'Your token, good for one room for ten minutes:';
+      },
+      'error-callback': () => fail('The captcha failed; reload and try again.'),
+    });
+  };
+  copy.onclick = () => { field.select(); navigator.clipboard?.writeText(field.value); copy.textContent = 'Copied'; };
+</script>
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&onload=onTurnstileLoad" async></script>
+</body>
+</html>

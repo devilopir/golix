@@ -1,0 +1,21 @@
+# One headless room registered with the public lobby. Players reach it over WebRTC, so no ports are published;
+# host networking gives its ICE candidates the machine's own address instead of a Docker bridge address.
+services:
+  room:
+    build:
+      context: ../..
+      dockerfile: deploy/Dockerfile
+      target: headless
+    container_name: golix-headless
+    network_mode: host
+    environment:
+      ROOM_NAME: ${ROOM_NAME:-Golix}
+      ADMIN_NAMES: ${ADMIN_NAMES:-}
+      ADMIN_AUTHS: ${ADMIN_AUTHS:-}
+      ADMIN_EVERYONE: ${ADMIN_EVERYONE:-}
+      ROOM_SECRET: ${ROOM_SECRET:-}
+      MAX_PLAYERS: ${MAX_PLAYERS:-12}
+      ROOM_GEO: ${ROOM_GEO:-}
+      PASSWORD: ${PASSWORD:-}
+      LOBBY_URL: ${LOBBY_URL:-wss://golix.cosmosfutsal.com}
+    restart: unless-stopped

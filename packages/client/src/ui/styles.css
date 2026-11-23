@@ -1,0 +1,1327 @@
+html,
+body {
+  margin: 0;
+  height: 100%;
+}
+
+#app {
+  height: 100%;
+}
+
+.dk-app {
+  position: relative;
+  height: 100%;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 1px 1px, rgb(255 255 255 / 0.05) 1px, transparent 1.5px) 0 0 / 14px 14px,
+    radial-gradient(ellipse at 50% 40%, color-mix(in srgb, var(--dk-bg) 80%, white) 0%, var(--dk-bg) 70%);
+  color: var(--dk-text);
+  font: 13px/1.45 var(--dk-font);
+  -webkit-font-smoothing: antialiased;
+  --dk-radius: 4px;
+}
+
+.dk-app * {
+  box-sizing: border-box;
+}
+
+.dk-app h1,
+.dk-app h2,
+.dk-app h3 {
+  margin: 0;
+  color: var(--dk-heading);
+  font-weight: 700;
+}
+
+.dk-app h1 {
+  font-size: 19px;
+}
+
+.dk-app h2 {
+  font-size: 16px;
+  margin-bottom: 12px;
+}
+
+.dk-app p {
+  margin: 0 0 8px;
+}
+
+.dk-row {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.dk-btn,
+.dk-tab,
+.dk-toggle-row,
+.dk-key-remove {
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+.dk-btn {
+  padding: 5px 12px;
+  border: 0;
+  border-radius: var(--dk-radius);
+  background: var(--dk-secondary);
+  color: var(--dk-heading);
+  font-weight: 600;
+  white-space: nowrap;
+  transition: background 0.1s;
+}
+
+.dk-btn:hover:not(:disabled) {
+  background: var(--dk-secondary-hover);
+}
+
+.dk-btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.dk-btn.on {
+  color: var(--dk-accent);
+}
+
+.dk-btn[hidden] {
+  display: none;
+}
+
+.dk-app input[type='text'],
+.dk-app input[type='password'],
+.dk-app input[type='number'],
+.dk-app select {
+  font: inherit;
+  color: inherit;
+  padding: 5px 8px;
+  border: 1px solid var(--dk-line);
+  border-radius: var(--dk-radius);
+  background: var(--dk-sunken);
+  min-width: 0;
+  outline: none;
+}
+
+.dk-app input[type='text']:focus,
+.dk-app input[type='password']:focus,
+.dk-app input[type='number']:focus,
+.dk-app select:focus {
+  border-color: var(--dk-accent);
+}
+
+.dk-app input[type='range'] {
+  accent-color: var(--dk-accent);
+}
+
+.dk-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.dk-field > span:first-child {
+  min-width: 110px;
+  color: var(--dk-muted);
+}
+
+.dk-field input,
+.dk-field select {
+  flex: 1;
+}
+
+.dk-overlay {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: var(--dk-overlay);
+  z-index: 10;
+}
+
+.dk-dialog {
+  width: min(420px, 100%);
+  max-height: 100%;
+  overflow: auto;
+  padding: 14px 16px 16px;
+  border-radius: 6px;
+  background: var(--dk-surface);
+  box-shadow: 0 16px 40px rgb(0 0 0 / 0.5);
+}
+
+.dk-dialog > input {
+  width: 100%;
+}
+
+.dk-dialog > h2 {
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--dk-accent);
+}
+
+.dk-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+  margin-top: 14px;
+  flex-wrap: wrap;
+}
+
+.dk-error {
+  color: var(--dk-danger);
+}
+
+.dk-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.dk-list li {
+  padding: 4px 8px;
+  cursor: pointer;
+}
+
+.dk-list li:hover {
+  background: var(--dk-hover);
+}
+
+.dk-list li.selected {
+  background: var(--dk-selected);
+}
+
+.dk-list li.custom,
+.dk-stadium-name.custom {
+  color: var(--dk-accent);
+}
+
+.dk-stadium-list,
+.dk-country-list,
+.dk-saved-replays {
+  max-height: 320px;
+  overflow: auto;
+  border-radius: var(--dk-radius);
+  background: var(--dk-sunken);
+}
+
+.dk-saved-replays li {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  grid-template-areas: 'name watch download' 'meta watch download';
+  align-items: center;
+  gap: 0 6px;
+  padding: 6px 8px;
+  cursor: default;
+}
+
+.dk-saved-replay-name {
+  grid-area: name;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--dk-heading);
+}
+
+.dk-saved-replay-meta {
+  grid-area: meta;
+  color: var(--dk-muted);
+  font-size: 12px;
+}
+
+.dk-saved-replay-watch {
+  grid-area: watch;
+}
+
+.dk-saved-replay-download {
+  grid-area: download;
+}
+
+.dk-flag {
+  display: inline-block;
+  margin-right: 4px;
+  font-size: 14px;
+  line-height: 1;
+  vertical-align: -1px;
+}
+
+.dk-screen {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  height: 100%;
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 24px 16px;
+}
+
+.dk-screen.dk-room-list {
+  position: absolute;
+  inset: 0;
+  width: min(660px, calc(100% - 32px));
+  height: min(700px, calc(100% - 48px));
+  margin: auto;
+  padding: 10px 12px 12px;
+  border-radius: 6px;
+  background: var(--dk-surface);
+  box-shadow: 0 16px 40px rgb(0 0 0 / 0.45);
+}
+
+.dk-overlay.dk-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+}
+
+.dk-stack > .dk-logo {
+  display: block;
+  object-fit: contain;
+  height: clamp(72px, 16vh, 150px);
+  max-width: 90%;
+  margin: 0;
+}
+
+.dk-nickname .dk-field > span:first-child {
+  min-width: 0;
+}
+
+.dk-nickname .dk-actions {
+  justify-content: center;
+}
+
+.dk-nickname .dk-actions .dk-btn {
+  min-width: 140px;
+}
+
+.dk-room-list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  padding-bottom: 6px;
+  border-bottom: 2px solid var(--dk-accent);
+}
+
+.dk-room-count,
+.dk-tip {
+  color: var(--dk-muted);
+}
+
+.dk-tip {
+  margin: 2px 0 0 !important;
+}
+
+.dk-room-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 6px 8px;
+  border-left: 3px solid var(--dk-accent);
+  border-radius: var(--dk-radius);
+  background: var(--dk-sunken);
+  white-space: pre-line;
+}
+
+.dk-room-notice[hidden] {
+  display: none;
+}
+
+.dk-room-notice > span {
+  flex: 1;
+}
+
+.dk-room-notice-close {
+  padding: 0 6px;
+  line-height: 1.2;
+}
+
+.dk-room-status {
+  margin: 0 !important;
+  color: var(--dk-muted);
+}
+
+.dk-room-status.error {
+  color: var(--dk-danger);
+}
+
+.dk-room-list-body {
+  display: flex;
+  gap: 10px;
+  flex: 1;
+  min-height: 0;
+}
+
+.dk-table-wrap {
+  flex: 1;
+  overflow: auto;
+}
+
+.dk-table-wrap table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.dk-table-wrap th {
+  position: sticky;
+  top: 0;
+  padding: 3px 6px;
+  text-align: left;
+  font-weight: 400;
+  color: var(--dk-muted);
+  background: var(--dk-surface);
+  border-bottom: 1px solid var(--dk-line);
+}
+
+.dk-table-wrap td {
+  padding: 2px 6px;
+  white-space: nowrap;
+}
+
+.dk-table-wrap th:not(:first-child),
+.dk-table-wrap td:not(:first-child) {
+  width: 1%;
+}
+
+.dk-table-wrap td:first-child {
+  max-width: 300px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dk-room-badge {
+  margin-right: 6px;
+  padding: 0 5px;
+  border: 1px solid var(--dk-line);
+  border-radius: 3px;
+  font-size: 0.8em;
+  color: var(--dk-muted);
+}
+
+.dk-table-wrap tbody tr {
+  cursor: pointer;
+}
+
+.dk-table-wrap tbody tr:hover td {
+  background: var(--dk-hover);
+}
+
+.dk-table-wrap tr.selected td {
+  background: var(--dk-selected);
+}
+
+.dk-room-list-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  width: 136px;
+}
+
+.dk-room-list-actions .dk-btn {
+  text-align: center;
+}
+
+.dk-filters .dk-btn {
+  padding: 2px 8px;
+  font-weight: 400;
+  color: var(--dk-text);
+}
+
+.dk-filters .dk-btn.on::after {
+  content: ' \2713';
+  color: var(--dk-accent);
+}
+
+.dk-spacer {
+  flex: 1;
+}
+
+.dk-room-view {
+  position: relative;
+  height: 100%;
+}
+
+.dk-game-layer {
+  position: absolute;
+  inset: 0;
+}
+
+.dk-game-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.dk-stats {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  z-index: 4;
+  width: 100px;
+  padding: 6px 5px 5px;
+  background: rgb(var(--dk-chat-rgb) / 0.55);
+  color: var(--dk-text);
+  font-size: 11px;
+  line-height: 1.35;
+  font-variant-numeric: tabular-nums;
+  white-space: pre;
+}
+
+.dk-stats canvas {
+  display: block;
+  width: 90px;
+  height: 40px;
+  margin-top: 4px;
+}
+
+.dk-stats[hidden] {
+  display: none;
+}
+
+.dk-top-bar {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  display: flex;
+  gap: 3px;
+  padding: 3px;
+  border-radius: 5px;
+  background: rgb(var(--dk-chat-rgb) / 0.75);
+  z-index: 6;
+}
+
+.dk-top-bar .dk-btn {
+  padding: 2px 9px;
+  font-size: 12px;
+}
+
+.dk-volume {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.dk-volume input {
+  width: 0;
+  opacity: 0;
+  transition: width 0.15s, opacity 0.15s;
+}
+
+.dk-volume:hover input,
+.dk-volume:focus-within input {
+  width: 90px;
+  opacity: 1;
+}
+
+.dk-room-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  /* Centred in the space above the resting chat, which the view measures for the camera too. */
+  padding: 44px 16px calc(var(--dk-chat-space, 0px) + 12px);
+  z-index: 5;
+  pointer-events: none;
+}
+
+.dk-room-overlay .dk-room-screen {
+  pointer-events: auto;
+}
+
+.dk-room-overlay[hidden] {
+  display: none;
+}
+
+.dk-room-screen {
+  width: min(960px, 100%);
+  font-size: 14px;
+  padding: 12px 16px 18px;
+  border-radius: 6px;
+  background: var(--dk-surface);
+  box-shadow: 0 16px 40px rgb(0 0 0 / 0.45);
+}
+
+.dk-room-header,
+.dk-room-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.dk-room-header {
+  padding-bottom: 6px;
+  border-bottom: 2px solid var(--dk-accent);
+}
+
+.dk-room-footer {
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 16px;
+}
+
+.dk-room-footer .dk-field {
+  margin: 0;
+  width: 320px;
+}
+
+.dk-room-footer .dk-field > span:first-child {
+  min-width: 100px;
+}
+
+.dk-room-footer .dk-game-buttons {
+  margin-top: 10px;
+}
+
+.dk-room-body {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.dk-room-tools {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  width: 90px;
+}
+
+/* The tools column is mirrored by an equal space after the teams, so the teams sit in the middle. */
+.dk-room-body::after {
+  content: '';
+  width: 90px;
+}
+
+.dk-teams {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  flex: 1;
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.dk-team {
+  min-height: 340px;
+  border-radius: var(--dk-radius);
+  border-top: 2px solid var(--dk-muted);
+  background: var(--dk-sunken);
+}
+
+.dk-team-red {
+  border-top-color: var(--dk-red);
+}
+
+.dk-team-blue {
+  border-top-color: var(--dk-blue);
+}
+
+.dk-team.drop-target {
+  outline: 1px solid var(--dk-accent);
+}
+
+.dk-team-head {
+  display: flex;
+  gap: 3px;
+  padding: 4px;
+}
+
+.dk-team-header {
+  flex: 1;
+}
+
+.dk-team .dk-list li {
+  padding: 4px 10px;
+}
+
+.dk-player {
+  display: flex;
+  align-items: center;
+}
+
+.dk-player[draggable='true'] {
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.dk-player-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dk-player.admin .dk-player-name {
+  color: var(--dk-accent);
+}
+
+.dk-player.self .dk-player-name {
+  font-weight: 700;
+}
+
+.dk-ping {
+  color: var(--dk-muted);
+  font-size: 11px;
+}
+
+.dk-menu-overlay {
+  background: transparent;
+}
+
+.dk-player-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 180px;
+  padding: 10px;
+  border-radius: 6px;
+  background: var(--dk-surface);
+  box-shadow: 0 12px 32px rgb(0 0 0 / 0.5);
+}
+
+.dk-chat {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  width: min(780px, 100%);
+  padding: 6px 8px 8px;
+  background: rgb(var(--dk-chat-rgb) / var(--dk-chat-opacity, 0.8));
+  border-radius: 6px 6px 0 0;
+  font-size: 12.5px;
+  line-height: 1.4;
+}
+
+.dk-chat.full {
+  width: 100%;
+  border-radius: 0;
+}
+
+.dk-chat.hidden:not(.focused) {
+  display: none;
+}
+
+.dk-chat-resize {
+  position: relative;
+  height: 12px;
+  margin: -6px -8px 0;
+  cursor: ns-resize;
+  touch-action: none;
+}
+
+.dk-chat-resize::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 4px;
+  width: 36px;
+  height: 3px;
+  margin-left: -18px;
+  border-radius: 2px;
+  background: var(--dk-muted);
+  opacity: 0.6;
+}
+
+.dk-chat-resize:hover::after {
+  opacity: 1;
+}
+
+.dk-chat-log {
+  height: var(--dk-chat-height, 120px);
+  overflow-y: auto;
+  scrollbar-width: thin;
+  transition: height 0.12s ease-out;
+}
+
+.dk-chat.resizing .dk-chat-log {
+  transition: none;
+}
+
+.dk-chat.resizing {
+  user-select: none;
+}
+
+.dk-chat.focused .dk-chat-log {
+  height: max(var(--dk-chat-height, 120px), var(--dk-chat-focus-height, 160px));
+}
+
+.dk-chat-line {
+  margin: 0 !important;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.dk-chat-line.notice {
+  color: var(--dk-muted);
+}
+
+.dk-chat-line.highlight {
+  color: var(--dk-highlight);
+  font-weight: 700;
+}
+
+.dk-chat-line.bold,
+.dk-chat-line.small-bold {
+  font-weight: 700;
+}
+
+.dk-chat-line.italic,
+.dk-chat-line.small-italic {
+  font-style: italic;
+}
+
+.dk-chat-line.small,
+.dk-chat-line.small-bold,
+.dk-chat-line.small-italic {
+  font-size: 11.5px;
+}
+
+.dk-chat-suggestions {
+  list-style: none;
+  margin: 4px 0;
+  padding: 3px;
+  border-radius: var(--dk-radius);
+  background: var(--dk-surface);
+}
+
+.dk-chat-suggestions li {
+  padding: 1px 6px;
+}
+
+.dk-chat-suggestions li.selected {
+  color: var(--dk-highlight);
+}
+
+.dk-app .dk-chat-input {
+  margin-top: 5px;
+  border: 0;
+  background: var(--dk-chat-input);
+}
+
+.dk-settings {
+  width: min(500px, 100%);
+}
+
+.dk-tabs {
+  display: flex;
+  gap: 2px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid var(--dk-line);
+}
+
+.dk-tab {
+  padding: 5px 10px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: none;
+  font-weight: 600;
+  color: var(--dk-muted);
+}
+
+.dk-tab.on {
+  color: var(--dk-heading);
+  border-bottom-color: var(--dk-accent);
+}
+
+.dk-settings-content {
+  min-height: 250px;
+}
+
+.dk-toggle-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 6px 4px;
+  border: 0;
+  background: none;
+  text-align: left;
+}
+
+.dk-toggle-row::before {
+  content: '';
+  width: 28px;
+  height: 15px;
+  border-radius: 8px;
+  background: var(--dk-secondary);
+  box-shadow: inset 2px 0 0 4px var(--dk-sunken);
+  transition: background 0.15s;
+}
+
+.dk-toggle-row.on::before {
+  background: var(--dk-accent);
+  box-shadow: inset -2px 0 0 4px var(--dk-sunken);
+}
+
+.dk-binding {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+  border-bottom: 1px solid var(--dk-line);
+}
+
+.dk-binding-action {
+  width: 90px;
+  color: var(--dk-muted);
+}
+
+.dk-keys {
+  display: flex;
+  flex: 1;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.dk-key {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 4px 1px 8px;
+  border-radius: var(--dk-radius);
+  background: var(--dk-secondary);
+  font-size: 12px;
+}
+
+.dk-key-remove {
+  border: 0;
+  background: none;
+  color: var(--dk-muted);
+  padding: 0 2px;
+}
+
+.dk-key-add {
+  padding: 1px 10px;
+}
+
+.dk-capture p {
+  font-size: 26px;
+  font-weight: 700;
+}
+
+@media (max-width: 640px) {
+  .dk-room-list-body,
+  .dk-room-body {
+    flex-direction: column;
+  }
+
+  .dk-room-list-actions,
+  .dk-room-tools {
+    flex-direction: row;
+    flex-wrap: wrap;
+    width: auto;
+  }
+
+  .dk-teams {
+    grid-template-columns: 1fr;
+    width: 100%;
+    max-width: none;
+  }
+
+  .dk-room-body::after {
+    display: none;
+  }
+
+  .dk-room-footer .dk-field {
+    width: 100%;
+  }
+
+  .dk-team {
+    min-height: 80px;
+  }
+
+  .dk-field > span:first-child {
+    min-width: 90px;
+  }
+
+  .dk-replay-camera span,
+  .dk-replay-clock {
+    display: none;
+  }
+}
+
+.dk-replay-view {
+  position: relative;
+  height: 100%;
+  --dk-replay-controls: 44px;
+}
+
+.dk-replay-view .dk-game-layer {
+  bottom: var(--dk-replay-controls);
+}
+
+.dk-replay-idle {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  margin: 0 !important;
+  color: var(--dk-muted);
+}
+
+.dk-replay-idle[hidden] {
+  display: none;
+}
+
+.dk-replay-chat {
+  bottom: var(--dk-replay-controls);
+  pointer-events: none;
+}
+
+.dk-replay-controls {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: var(--dk-replay-controls);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 10px;
+  background: var(--dk-surface);
+  border-top: 1px solid var(--dk-line);
+}
+
+.dk-replay-timeline {
+  position: relative;
+  flex: 1;
+  min-width: 80px;
+  height: 10px;
+  border-radius: 5px;
+  background: var(--dk-secondary);
+  cursor: pointer;
+  touch-action: none;
+}
+
+.dk-replay-progress {
+  height: 100%;
+  border-radius: 5px;
+  background: var(--dk-accent);
+  pointer-events: none;
+}
+
+.dk-replay-mark {
+  position: absolute;
+  top: -3px;
+  bottom: -3px;
+  width: 2px;
+  margin-left: -1px;
+  pointer-events: none;
+}
+
+.dk-replay-mark.red {
+  background: var(--dk-red);
+}
+
+.dk-replay-mark.blue {
+  background: var(--dk-blue);
+}
+
+.dk-replay-tooltip {
+  position: absolute;
+  bottom: 16px;
+  transform: translateX(-50%);
+  padding: 2px 6px;
+  border-radius: var(--dk-radius);
+  background: var(--dk-sunken);
+  font-size: 12px;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.dk-replay-clock {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.dk-replay-camera {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+@media (max-width: 640px) {
+  .dk-replay-view {
+    --dk-replay-controls: 92px;
+  }
+
+  .dk-replay-controls {
+    flex-wrap: wrap;
+    align-content: center;
+    gap: 6px 4px;
+    padding: 0 8px;
+  }
+
+  .dk-replay-timeline {
+    order: -1;
+    flex-basis: 100%;
+  }
+}
+
+.dk-touch {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  --dk-stick-size: 120px;
+}
+
+.dk-touch[hidden] {
+  display: none;
+}
+
+.dk-touch-zone {
+  position: absolute;
+  top: 44px;
+  left: 0;
+  bottom: 0;
+  width: 50%;
+}
+
+.dk-touch-stick {
+  position: absolute;
+  width: var(--dk-stick-size);
+  height: var(--dk-stick-size);
+  transform: translate(-50%, -50%);
+  border: 2px solid rgb(255 255 255 / 0.5);
+  border-radius: 50%;
+  background: rgb(var(--dk-chat-rgb) / 0.35);
+  pointer-events: none;
+}
+
+.dk-touch-stick.idle {
+  left: calc(16px + var(--dk-stick-size) / 2);
+  top: 55%;
+  opacity: 0.4;
+}
+
+.dk-touch-knob {
+  position: absolute;
+  inset: 30%;
+  border-radius: 50%;
+  background: rgb(255 255 255 / 0.6);
+}
+
+.dk-touch-kick,
+.dk-touch-action {
+  display: grid;
+  place-items: center;
+  border: 2px solid rgb(255 255 255 / 0.5);
+  border-radius: 50%;
+  background: rgb(var(--dk-chat-rgb) / 0.45);
+  color: var(--dk-heading);
+  font-weight: 700;
+}
+
+.dk-touch-kick.on,
+.dk-touch-action.on {
+  background: rgb(255 255 255 / 0.55);
+  color: rgb(var(--dk-chat-rgb));
+}
+
+.dk-touch-kick {
+  position: absolute;
+  right: 20px;
+  bottom: 20px;
+  width: calc(var(--dk-stick-size) * 0.75);
+  height: calc(var(--dk-stick-size) * 0.75);
+}
+
+.dk-touch-actions {
+  position: absolute;
+  right: 20px;
+  bottom: calc(32px + var(--dk-stick-size) * 0.75);
+  display: grid;
+  grid-template-columns: repeat(3, calc(var(--dk-stick-size) * 0.36));
+  grid-auto-rows: calc(var(--dk-stick-size) * 0.36);
+  gap: 8px;
+}
+
+.dk-touch-actions[hidden] {
+  display: none;
+}
+
+.dk-rotate-hint {
+  display: none;
+}
+
+@media (orientation: landscape) {
+  .dk-touch:not([hidden]) ~ .dk-chat:not(.focused) {
+    width: min(360px, 40%);
+  }
+
+  .dk-touch:not([hidden]) ~ .dk-chat:not(.focused) .dk-chat-log {
+    max-height: 22vh;
+    pointer-events: none;
+  }
+}
+
+@media (orientation: portrait) {
+  .dk-touch-zone,
+  .dk-touch-kick,
+  .dk-touch-actions {
+    display: none;
+  }
+
+  .dk-touch .dk-rotate-hint {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    margin: 0;
+    padding: 24px;
+    background: var(--dk-overlay);
+    color: var(--dk-heading);
+    font-size: 18px;
+    font-weight: 700;
+    text-align: center;
+  }
+}
+
+@media (pointer: coarse) {
+  html,
+  body {
+    overscroll-behavior: none;
+  }
+
+  .dk-app {
+    touch-action: manipulation;
+  }
+}
+
+@media (max-height: 500px) {
+  .dk-room-overlay {
+    align-items: flex-start;
+    padding: 40px 8px 8px;
+    overflow-y: auto;
+  }
+
+  .dk-team {
+    min-height: 90px;
+  }
+}
+
+.dk-replay-players {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 140px;
+  max-width: 220px;
+  margin: 0;
+  padding: 6px 8px;
+  list-style: none;
+  background: rgb(var(--dk-chat-rgb) / 0.8);
+  border-radius: var(--dk-radius);
+  font-size: 12px;
+  pointer-events: none;
+}
+
+.dk-replay-players:empty {
+  display: none;
+}
+
+.dk-replay-players li {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  padding-left: 6px;
+  border-left: 3px solid var(--dk-muted);
+}
+
+.dk-replay-players li.red {
+  border-left-color: var(--dk-red);
+}
+
+.dk-replay-players li.blue {
+  border-left-color: var(--dk-blue);
+}
+
+.dk-replay-handicap {
+  color: var(--dk-success);
+  font-size: 11px;
+}
+
+.dk-mod-panel {
+  width: min(460px, 100%);
+}
+
+.dk-mod-section {
+  margin-bottom: 14px;
+}
+
+.dk-mod-section h3 {
+  margin: 0 0 6px;
+  font-size: 13px;
+  color: var(--dk-muted);
+}
+
+.dk-mod-section > .dk-row {
+  flex-wrap: wrap;
+}
+
+.dk-mod-texts {
+  margin: 6px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dk-mod-texts li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 3px 0;
+}
+
+.dk-mod-section > input[type='text'] {
+  width: 100%;
+  margin-bottom: 6px;
+}
+
+/* Outside #app, so the theme variables do not reach it; hidden while playing or watching a replay. */
+.dk-site-links {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 10px;
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 4px 18px;
+  padding: 0 16px;
+  /* Above .dk-overlay, which covers the screen behind the nickname and other dialogs. */
+  z-index: 11;
+  font: 12px/1.4 -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans', 'Helvetica Neue', Arial, sans-serif;
+  pointer-events: none;
+}
+
+.dk-site-links a {
+  color: rgb(228 231 226 / 0.55);
+  text-decoration: none;
+  pointer-events: auto;
+}
+
+.dk-site-links a:hover {
+  color: #e3a33b;
+}
+
+body:has(.dk-room-overlay, .dk-replay-view) .dk-site-links {
+  display: none;
+}

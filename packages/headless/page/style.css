@@ -1,0 +1,108 @@
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  background: var(--dk-bg);
+  color: var(--dk-text);
+  font: 13px/1.45 var(--dk-font);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+.hh {
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 24px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.hh h1 {
+  margin: 0;
+  color: var(--dk-heading);
+  font-size: 20px;
+}
+
+.hh-muted {
+  margin: 0;
+  color: var(--dk-muted);
+}
+
+.hh code,
+.hh textarea,
+.hh pre {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.hh textarea {
+  min-height: 320px;
+  padding: 10px;
+  resize: vertical;
+  border: 1px solid var(--dk-line);
+  border-radius: 4px;
+  background: var(--dk-sunken);
+  color: var(--dk-text);
+  font-size: 12px;
+  tab-size: 2;
+}
+
+.hh-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.hh button {
+  padding: 6px 16px;
+  border: 0;
+  border-radius: 4px;
+  background: var(--dk-accent);
+  color: var(--dk-sunken);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.hh button:hover:not(:disabled) {
+  background: var(--dk-accent-hover);
+}
+
+.hh button.hh-secondary {
+  background: var(--dk-secondary);
+  color: var(--dk-text);
+}
+
+.hh button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.hh a {
+  color: var(--dk-accent);
+  overflow-wrap: anywhere;
+}
+
+.hh pre {
+  min-height: 120px;
+  max-height: 360px;
+  margin: 0;
+  padding: 10px;
+  overflow: auto;
+  border-radius: 4px;
+  background: var(--dk-surface);
+  font-size: 12px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.hh pre .warn {
+  color: var(--dk-accent);
+}
+
+.hh pre .error {
+  color: var(--dk-danger);
+}

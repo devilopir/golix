@@ -1,0 +1,48 @@
+{
+  "name": "golix.js",
+  "version": "0.1.0",
+  "description": "Host Golix rooms from Node with the Headless Host API, and join rooms as a player.",
+  "license": "MIT",
+  "homepage": "https://golix.cosmosfutsal.com/docs/",
+  "keywords": [
+    "golix",
+    "haxball",
+    "headless",
+    "bot",
+    "football",
+    "webrtc"
+  ],
+  "type": "module",
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "node-datachannel": "^0.33.6",
+    "ws": "^8.23.0"
+  },
+  "devDependencies": {
+    "@golix/headless": "workspace:*",
+    "@golix/replay": "workspace:*",
+    "tsdown": "0.23.7"
+  },
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc -p ."
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.cts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
+    },
+    "./package.json": "./package.json"
+  },
+  "inlinedDependencies": {
+    "json5": "2.2.3"
+  }
+}

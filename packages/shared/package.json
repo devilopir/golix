@@ -1,0 +1,14 @@
+{
+  "name": "@golix/shared",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "json5": "^2.2.3"
+  },
+  "scripts": {
+    "typecheck": "tsc -p ."
+  }
+}

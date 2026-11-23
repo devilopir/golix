@@ -1,0 +1,16 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`team color pattern > paints each color set once and reuses the pattern 1`] = `
+[
+  "surface1.getContext("2d", undefined)",
+  "surface1.fillStyle = "#112233"",
+  "surface1.fillRect(0, 0, 32, 64)",
+  "surface1.fillStyle = "#445566"",
+  "surface1.fillRect(32, 0, 32, 64)",
+  "main.createPattern(<surface1>, "repeat")",
+  "surface2.getContext("2d", undefined)",
+  "surface2.fillStyle = "#112233"",
+  "surface2.fillRect(0, 0, 64, 64)",
+  "main.createPattern(<surface2>, "repeat")",
+]
+`;
